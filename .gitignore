@@ -6,6 +6,7 @@ build/
 *.so
 *.d
 compile_commands.json
+*.app
 *.app/
 moc_*
 ui_*
