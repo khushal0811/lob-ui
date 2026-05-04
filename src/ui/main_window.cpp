@@ -7,11 +7,13 @@
 #include "ui/metrics_panel.hpp"
 #include "ui/spread_chart.hpp"
 #include "ui/welcome_overlay.hpp"
+#include "ui/tutorial_overlay.hpp"
 #include <QFrame>
 #include <QScrollArea>
 #include <QShowEvent>
 #include <QSplitter>
 #include <QThread>
+#include <QTimer>
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -100,8 +102,9 @@ void MainWindow::setup_ui() {
 
     setCentralWidget(splitter);
 
-    // Overlay: created last so it sits on top; no parent layout
-    overlay_ = new WelcomeOverlay(this);
+    // Overlay and tutorial: created last so they sit on top
+    overlay_  = new WelcomeOverlay(this);
+    tutorial_ = new TutorialOverlay(this);
 }
 
 void MainWindow::setup_connections() {
@@ -169,12 +172,23 @@ void MainWindow::setup_connections() {
     connect(replay_ctrl_, &ReplayControls::stop_scenario,
             worker_, &EngineWorker::stopScenario);
 
-    // Overlay start button → engine starts medium scenario (Step 4: no auto-start)
+    // Overlay start → silent engine starts medium scenario, tutorial appears after 2s
     connect(overlay_, &WelcomeOverlay::start_requested,
             worker_, [this] {
                 QMetaObject::invokeMethod(worker_, "startScenario",
                                           Qt::QueuedConnection,
                                           Q_ARG(QString, "medium"));
+                QTimer::singleShot(2000, this, [this] {
+                    tutorial_->show_for_scenario("medium");
+                });
+            });
+
+    // Scenario selection from replay controls → show scenario tutorial after 2s
+    connect(replay_ctrl_, &ReplayControls::start_scenario,
+            this, [this](const QString& name) {
+                QTimer::singleShot(2000, this, [this, name] {
+                    tutorial_->show_for_scenario(name);
+                });
             });
 }
 

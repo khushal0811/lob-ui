@@ -13,6 +13,7 @@ class ReplayControls;
 class MetricsPanel;
 class SpreadChart;
 class WelcomeOverlay;
+class TutorialOverlay;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -41,6 +42,7 @@ private:
     MetricsPanel*   metrics_panel_ {nullptr};
     SpreadChart*    spread_chart_  {nullptr};
     WelcomeOverlay* overlay_       {nullptr};
+    TutorialOverlay* tutorial_     {nullptr};
 };
 
 } // namespace lob_qt
