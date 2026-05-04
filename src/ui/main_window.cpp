@@ -7,6 +7,8 @@
 #include "ui/metrics_panel.hpp"
 #include "ui/spread_chart.hpp"
 #include "ui/welcome_overlay.hpp"
+#include <QFrame>
+#include <QScrollArea>
 #include <QShowEvent>
 #include <QSplitter>
 #include <QThread>
@@ -68,20 +70,30 @@ void MainWindow::setup_ui() {
     left_layout->addWidget(book_panel_, 2);
     left_layout->addWidget(trade_tape_, 3);
 
-    // Right column: order entry + replay controls + metrics + spread chart
-    auto* right_widget = new QWidget(this);
-    right_widget->setMinimumWidth(440);
-    auto* right_layout = new QVBoxLayout(right_widget);
+    // Inner widget holds all right-panel content at natural size
+    auto* right_content = new QWidget();
+    right_content->setMinimumWidth(420);
+    auto* right_layout = new QVBoxLayout(right_content);
     right_layout->setContentsMargins(4, 4, 4, 4);
-    right_layout->setSpacing(4);
+    right_layout->setSpacing(6);
     right_layout->addWidget(order_entry_);
     right_layout->addWidget(replay_ctrl_);
     right_layout->addWidget(metrics_panel_);
-    right_layout->addWidget(spread_chart_, 1);
+    right_layout->addWidget(spread_chart_);
+    right_layout->addStretch();
+
+    // Scroll area wraps the content — right panel is now scrollable
+    auto* scroll = new QScrollArea(this);
+    scroll->setWidget(right_content);
+    scroll->setWidgetResizable(true);
+    scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    scroll->setMinimumWidth(440);
+    scroll->setFrameShape(QFrame::NoFrame);
 
     auto* splitter = new QSplitter(Qt::Horizontal, this);
     splitter->addWidget(left_widget);
-    splitter->addWidget(right_widget);
+    splitter->addWidget(scroll);
     splitter->setStretchFactor(0, 3);
     splitter->setStretchFactor(1, 1);
     splitter->setSizes({820, 460});

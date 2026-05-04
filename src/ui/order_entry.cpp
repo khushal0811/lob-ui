@@ -79,7 +79,6 @@ void OrderEntry::setup_ui() {
     layout->addWidget(new QLabel("Cancel by ID:", this));
     layout->addLayout(cancel_layout);
     layout->addWidget(feedback_label_);
-    layout->addStretch();
     setLayout(layout);
 
     connect(submit_btn_, &QPushButton::clicked,

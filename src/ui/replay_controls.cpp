@@ -59,7 +59,6 @@ void ReplayControls::setup_ui() {
     layout->addSpacing(8);
     layout->addWidget(scenario_header);
     layout->addLayout(scenario_row);
-    layout->addStretch();
     setLayout(layout);
 
     connect(load_btn_,  &QPushButton::clicked, this, &ReplayControls::on_load_clicked);
