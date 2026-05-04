@@ -4,9 +4,18 @@
 
 Most people who trade — or learn about finance — never see what actually happens when they place an order. What does "best bid" mean? What is a spread? Why does your market order sometimes get a worse price than you expected? Why does liquidity disappear when volatility spikes?
 
-**lob-qt** is a desktop application that makes all of this visible in real time, backed by a genuine HFT-grade C++ matching engine. Every order you submit — limit, market, stop, iceberg — immediately interacts with a live order book running at sub-microsecond latency. You watch the bid/ask table shift, the spread widen or tighten, and the trade tape fill up — all as a direct result of your actions.
+**lob-qt** is a desktop application that makes all of this visible in real time. **This is not a mock UI — it is backed by an exchange-style C++ matching engine.** Every order you submit — limit, market, stop, iceberg — immediately interacts with a live order book running on a dedicated background thread. You watch the bid/ask table shift, the spread widen or tighten, and the trade tape fill up — all as a direct result of your actions.
 
-This isn't a simulation. It's a real matching engine, the same class of technology used by proprietary trading firms, with a transparent UI built on top of it.
+## Why I built this
+I built **lob-qt** to make market microstructure visible and to demonstrate how low-latency systems, UI threading, and high-performance matching engines work together. It bridges the gap between raw systems engineering (C++ engine) and user-centric product design (Qt UI).
+
+---
+
+## Technical Edge: Real Thread Separation
+One of the strongest parts of this architecture is the **absolute separation of concerns**:
+*   **Zero UI Blocking:** The matching engine (`lob-engine`) runs on a dedicated background thread. Even if the engine is processing thousands of events, the UI remains perfectly responsive.
+*   **No Shared State:** The UI never touches the engine's memory. All communication happens via thread-safe Qt signals using `QueuedConnection`.
+*   **Passive Integration:** The UI "listens" to the engine; it does not mutate it directly, ensuring the integrity of the matching logic.
 
 ---
 
@@ -42,7 +51,7 @@ This isn't a simulation. It's a real matching engine, the same class of technolo
 - **Order Status Table** — see ordered vs filled quantity per order, live as trades come in
 - **Metrics Panel** — throughput (ev/s), latency percentiles (p50/p99/max), fill rate, cancel rate
 - **Spread Chart** — rolling 120-point line chart of bid/ask spread over time
-- **Scenario Engine** — 6 built-in synthetic market scenarios at different intensities
+- **Scenario Engine** — 6 built-in market scenarios running on an exchange-style engine
 - **CSV Replay** — load any event log and replay step-by-step or at variable speed
 - **Tutorial Overlays** — step-by-step exercises for each scenario that teach the concepts live
 - **Welcome Guide** — explains every panel before the engine starts
