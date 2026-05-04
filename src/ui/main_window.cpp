@@ -118,6 +118,11 @@ void MainWindow::setup_connections() {
             trade_tape_, &TradeTape::add_trade,
             Qt::QueuedConnection);
 
+    // Also route trades into order entry so the status table updates
+    connect(worker_, &EngineWorker::tradeExecuted,
+            order_entry_, &OrderEntry::on_trade_update,
+            Qt::QueuedConnection);
+
     connect(worker_, &EngineWorker::orderRejected,
             order_entry_, &OrderEntry::show_rejection,
             Qt::QueuedConnection);
