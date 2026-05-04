@@ -1,0 +1,131 @@
+#include "ui/main_window.hpp"
+#include "engine/engine_worker.hpp"
+#include "ui/order_book_panel.hpp"
+#include "ui/trade_tape.hpp"
+#include "ui/order_entry.hpp"
+#include "ui/replay_controls.hpp"
+#include <QSplitter>
+#include <QThread>
+#include <QVBoxLayout>
+#include <QWidget>
+
+namespace lob_qt {
+
+MainWindow::MainWindow(QWidget* parent)
+    : QMainWindow(parent) {
+    setWindowTitle("lob-engine — Order Book Visualizer");
+    setMinimumSize(1280, 800);
+
+    setup_worker();
+    setup_ui();
+    setup_connections();
+}
+
+MainWindow::~MainWindow() {
+    worker_thread_->quit();
+    worker_thread_->wait();
+}
+
+void MainWindow::setup_worker() {
+    worker_        = new EngineWorker();
+    worker_thread_ = new QThread(this);
+
+    worker_->moveToThread(worker_thread_);
+
+    connect(worker_thread_, &QThread::finished,
+            worker_,        &QObject::deleteLater);
+
+    worker_thread_->start();
+}
+
+void MainWindow::setup_ui() {
+    book_panel_  = new OrderBookPanel(this);
+    trade_tape_  = new TradeTape(this);
+    order_entry_ = new OrderEntry(this);
+    replay_ctrl_ = new ReplayControls(this);
+
+    // Left side: order book (top) + trade tape (bottom)
+    auto* left_widget = new QWidget(this);
+    auto* left_layout = new QVBoxLayout(left_widget);
+    left_layout->setContentsMargins(0, 0, 0, 0);
+    left_layout->setSpacing(0);
+    left_layout->addWidget(book_panel_, 2);
+    left_layout->addWidget(trade_tape_, 3);
+
+    // Right side: order entry (top) + replay controls (bottom)
+    auto* right_widget = new QWidget(this);
+    auto* right_layout = new QVBoxLayout(right_widget);
+    right_layout->setContentsMargins(0, 0, 0, 0);
+    right_layout->setSpacing(0);
+    right_layout->addWidget(order_entry_);
+    right_layout->addWidget(replay_ctrl_);
+
+    auto* splitter = new QSplitter(Qt::Horizontal, this);
+    splitter->addWidget(left_widget);
+    splitter->addWidget(right_widget);
+    splitter->setStretchFactor(0, 3);
+    splitter->setStretchFactor(1, 1);
+    splitter->setSizes({900, 380});
+
+    setCentralWidget(splitter);
+}
+
+void MainWindow::setup_connections() {
+    // ---- Engine → UI (QueuedConnection — cross-thread) ----
+
+    connect(worker_, &EngineWorker::bookUpdated,
+            book_panel_, &OrderBookPanel::update,
+            Qt::QueuedConnection);
+
+    connect(worker_, &EngineWorker::tradeExecuted,
+            trade_tape_, &TradeTape::add_trade,
+            Qt::QueuedConnection);
+
+    connect(worker_, &EngineWorker::orderRejected,
+            order_entry_, &OrderEntry::show_rejection,
+            Qt::QueuedConnection);
+
+    connect(worker_, &EngineWorker::replayFinished,
+            replay_ctrl_, &ReplayControls::on_replay_finished,
+            Qt::QueuedConnection);
+
+    connect(worker_, &EngineWorker::replayProgress,
+            replay_ctrl_, &ReplayControls::update_progress,
+            Qt::QueuedConnection);
+
+    // ---- UI → Engine (AutoConnection resolves to QueuedConnection) ----
+
+    connect(order_entry_, &OrderEntry::submit_order,
+            worker_, &EngineWorker::submitOrder);
+
+    connect(order_entry_, &OrderEntry::cancel_order,
+            worker_, &EngineWorker::cancelOrder);
+
+    connect(replay_ctrl_, &ReplayControls::load_csv,
+            worker_, &EngineWorker::loadCsv);
+
+    connect(replay_ctrl_, &ReplayControls::start_replay,
+            worker_, &EngineWorker::startReplay);
+
+    connect(replay_ctrl_, &ReplayControls::pause_replay,
+            worker_, &EngineWorker::pauseReplay);
+
+    connect(replay_ctrl_, &ReplayControls::step_replay,
+            worker_, &EngineWorker::stepReplay);
+
+    connect(replay_ctrl_, &ReplayControls::reset_engine,
+            worker_, &EngineWorker::resetEngine);
+
+    connect(replay_ctrl_, &ReplayControls::start_scenario,
+            worker_, &EngineWorker::startScenario);
+
+    connect(replay_ctrl_, &ReplayControls::stop_scenario,
+            worker_, &EngineWorker::stopScenario);
+
+    // Auto-start medium scenario on launch
+    QMetaObject::invokeMethod(worker_, "startScenario",
+                              Qt::QueuedConnection,
+                              Q_ARG(QString, "medium"));
+}
+
+} // namespace lob_qt

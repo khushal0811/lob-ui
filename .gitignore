@@ -1,0 +1,12 @@
+build/
+.cache/
+*.o
+*.a
+*.so
+*.d
+compile_commands.json
+*.app/
+moc_*
+ui_*
+qrc_*
+.DS_Store
