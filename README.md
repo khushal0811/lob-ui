@@ -4,13 +4,11 @@
 
 Most people who trade — or learn about finance — never see what actually happens when they place an order. What does "best bid" mean? What is a spread? Why does your market order sometimes get a worse price than you expected? Why does liquidity disappear when volatility spikes?
 
-**lob-qt** is a Qt6 desktop app that makes all of this visible — backed by [lob-engine](https://github.com/khushal0811/lob-engine), a low-latency C++ matching engine running on a dedicated background thread.
+**lob-qt** is a Qt6 desktop app that makes all of this visible — backed by [lob-engine](https://github.com/khushal0811/lob-engine), a low-latency C++ matching engine running on a dedicated background thread. Every order you submit — limit, market, stop, iceberg — immediately hits the live book. You watch bid/ask levels shift, the spread change, and the trade tape fill up in real time as a direct result of your actions.
 
 ![lob-qt demo](https://github.com/khushal0811/lob-ui/assets/176611453/9c1d169e-9c93-4288-adce-dcab6e9f0547)
 
 ---
-
-**lob-qt** is a desktop application that makes all of this visible in real time. **This is not a mock UI — it is backed by an exchange-style C++ matching engine.** Every order you submit — limit, market, stop, iceberg — immediately interacts with a live order book running on a dedicated background thread. You watch the bid/ask table shift, the spread widen or tighten, and the trade tape fill up — all as a direct result of your actions.
 
 ## Why I built this
 I built **lob-qt** to make market microstructure visible and to demonstrate how low-latency systems, UI threading, and high-performance matching engines work together. It bridges the gap between raw systems engineering (C++ engine) and user-centric product design (Qt UI).
@@ -76,7 +74,7 @@ One of the strongest parts of this architecture is the **absolute separation of 
                        │  (all cross-thread signals)
 ┌──────────────────────▼─────────────────────────────────┐
 │                 Engine Worker Thread                     │
-│  EngineWorker → lob::MatchingEngine (HFT-grade C++)    │
+│  EngineWorker → lob::MatchingEngine (C++ matching engine)    │
 │  SyntheticGenerator / CsvReplayReader                   │
 │  QTimer (1ms generator tick, 1s metrics tick)          │
 └────────────────────────────────────────────────────────┘
