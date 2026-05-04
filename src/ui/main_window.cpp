@@ -4,6 +4,8 @@
 #include "ui/trade_tape.hpp"
 #include "ui/order_entry.hpp"
 #include "ui/replay_controls.hpp"
+#include "ui/metrics_panel.hpp"
+#include "ui/spread_chart.hpp"
 #include <QSplitter>
 #include <QThread>
 #include <QVBoxLayout>
@@ -39,12 +41,14 @@ void MainWindow::setup_worker() {
 }
 
 void MainWindow::setup_ui() {
-    book_panel_  = new OrderBookPanel(this);
-    trade_tape_  = new TradeTape(this);
-    order_entry_ = new OrderEntry(this);
-    replay_ctrl_ = new ReplayControls(this);
+    book_panel_    = new OrderBookPanel(this);
+    trade_tape_    = new TradeTape(this);
+    order_entry_   = new OrderEntry(this);
+    replay_ctrl_   = new ReplayControls(this);
+    metrics_panel_ = new MetricsPanel(this);
+    spread_chart_  = new SpreadChart(this);
 
-    // Left side: order book (top) + trade tape (bottom)
+    // Left column: order book (top) + trade tape (bottom)
     auto* left_widget = new QWidget(this);
     auto* left_layout = new QVBoxLayout(left_widget);
     left_layout->setContentsMargins(0, 0, 0, 0);
@@ -52,13 +56,15 @@ void MainWindow::setup_ui() {
     left_layout->addWidget(book_panel_, 2);
     left_layout->addWidget(trade_tape_, 3);
 
-    // Right side: order entry (top) + replay controls (bottom)
+    // Right column: order entry + replay controls + metrics + spread chart
     auto* right_widget = new QWidget(this);
     auto* right_layout = new QVBoxLayout(right_widget);
     right_layout->setContentsMargins(0, 0, 0, 0);
     right_layout->setSpacing(0);
     right_layout->addWidget(order_entry_);
     right_layout->addWidget(replay_ctrl_);
+    right_layout->addWidget(metrics_panel_);
+    right_layout->addWidget(spread_chart_);
 
     auto* splitter = new QSplitter(Qt::Horizontal, this);
     splitter->addWidget(left_widget);
@@ -91,6 +97,21 @@ void MainWindow::setup_connections() {
 
     connect(worker_, &EngineWorker::replayProgress,
             replay_ctrl_, &ReplayControls::update_progress,
+            Qt::QueuedConnection);
+
+    // Phase 4 — book snapshot also drives metrics book info and spread chart
+    connect(worker_, &EngineWorker::bookUpdated,
+            metrics_panel_, &MetricsPanel::update_book_info,
+            Qt::QueuedConnection);
+
+    connect(worker_, &EngineWorker::bookUpdated,
+            this, [this](const lob_qt::BookSnapshot& snap) {
+                spread_chart_->add_point(snap.spread);
+            }, Qt::QueuedConnection);
+
+    // Phase 4 — metrics timer drives the metrics panel
+    connect(worker_, &EngineWorker::metricsUpdated,
+            metrics_panel_, &MetricsPanel::update,
             Qt::QueuedConnection);
 
     // ---- UI → Engine (AutoConnection resolves to QueuedConnection) ----
