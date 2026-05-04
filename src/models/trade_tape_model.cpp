@@ -15,7 +15,7 @@ int TradeTapeModel::columnCount(const QModelIndex&) const {
 }
 
 QVariant TradeTapeModel::data(const QModelIndex& index, int role) const {
-    if (!index.isValid() || index.row() >= trades_.size()) return {};
+    if (!index.isValid() || index.row() >= static_cast<int>(trades_.size())) return {};
     const auto& t = trades_[index.row()];
 
     if (role == Qt::DisplayRole) {
@@ -58,7 +58,7 @@ void TradeTapeModel::add_trade(const lob_qt::TradeRecord& record) {
     trades_.prepend(record);
     endInsertRows();
 
-    if (trades_.size() > kMaxRows) {
+    if (static_cast<int>(trades_.size()) > kMaxRows) {
         beginRemoveRows({}, kMaxRows, trades_.size() - 1);
         trades_.resize(kMaxRows);
         endRemoveRows();

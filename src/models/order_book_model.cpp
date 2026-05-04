@@ -16,7 +16,7 @@ int OrderBookModel::columnCount(const QModelIndex&) const {
 }
 
 QVariant OrderBookModel::data(const QModelIndex& index, int role) const {
-    if (!index.isValid() || index.row() >= levels_.size()) return {};
+    if (!index.isValid() || index.row() >= static_cast<int>(levels_.size())) return {};
 
     const auto& entry = levels_[index.row()];
 

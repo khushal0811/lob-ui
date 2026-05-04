@@ -28,6 +28,16 @@ void OrderEntry::setup_ui() {
     cancel_btn_     = new QPushButton("Cancel Order", this);
     feedback_label_ = new QLabel("", this);
 
+    // Explicit style so macOS native theme doesn't override our dark palette
+    const QString combo_style =
+        "QComboBox { background: #181825; color: #cdd6f4; "
+        "border: 1px solid #45475a; border-radius: 3px; padding: 3px 6px; } "
+        "QComboBox::drop-down { border: none; width: 20px; } "
+        "QComboBox QAbstractItemView { background: #181825; color: #cdd6f4; "
+        "selection-background-color: #45475a; }";
+    type_combo_->setStyleSheet(combo_style);
+    side_combo_->setStyleSheet(combo_style);
+
     type_combo_->addItems({"Limit", "Market", "Stop", "Stop-Limit", "Iceberg"});
     side_combo_->addItems({"Buy", "Sell"});
 
@@ -41,6 +51,9 @@ void OrderEntry::setup_ui() {
     stop_edit_->hide();
 
     auto* form = new QFormLayout;
+    form->setLabelAlignment(Qt::AlignRight);
+    form->setSpacing(6);
+    form->setContentsMargins(0, 0, 0, 0);
     form->addRow("Type:",     type_combo_);
     form->addRow("Side:",     side_combo_);
     form->addRow("Price:",    price_edit_);

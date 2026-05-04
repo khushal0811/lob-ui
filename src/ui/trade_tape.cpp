@@ -17,9 +17,12 @@ TradeTape::TradeTape(QWidget* parent) : QWidget(parent) {
     view_->verticalHeader()->hide();
     view_->setShowGrid(false);
     view_->verticalHeader()->setDefaultSectionSize(20);
+    // Step 8: alternating rows for readability
+    view_->setAlternatingRowColors(true);
 
     auto* header = new QLabel("<b>Trade Tape</b>", this);
-    header->setStyleSheet("color: #89b4fa; font-size: 13px;");
+    // Step 8: match order book header styling exactly
+    header->setStyleSheet("font-size: 14px; font-weight: bold; color: #89b4fa;");
 
     auto* layout = new QVBoxLayout(this);
     layout->setContentsMargins(8, 8, 8, 8);

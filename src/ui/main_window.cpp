@@ -6,6 +6,8 @@
 #include "ui/replay_controls.hpp"
 #include "ui/metrics_panel.hpp"
 #include "ui/spread_chart.hpp"
+#include "ui/welcome_overlay.hpp"
+#include <QShowEvent>
 #include <QSplitter>
 #include <QThread>
 #include <QVBoxLayout>
@@ -26,6 +28,16 @@ MainWindow::MainWindow(QWidget* parent)
 MainWindow::~MainWindow() {
     worker_thread_->quit();
     worker_thread_->wait();
+}
+
+void MainWindow::showEvent(QShowEvent* event) {
+    QMainWindow::showEvent(event);
+    // Show overlay on first display, covering the full window
+    if (overlay_) {
+        overlay_->setGeometry(rect());
+        overlay_->show();
+        overlay_->raise();
+    }
 }
 
 void MainWindow::setup_worker() {
@@ -52,28 +64,32 @@ void MainWindow::setup_ui() {
     auto* left_widget = new QWidget(this);
     auto* left_layout = new QVBoxLayout(left_widget);
     left_layout->setContentsMargins(0, 0, 0, 0);
-    left_layout->setSpacing(0);
+    left_layout->setSpacing(4);
     left_layout->addWidget(book_panel_, 2);
     left_layout->addWidget(trade_tape_, 3);
 
     // Right column: order entry + replay controls + metrics + spread chart
     auto* right_widget = new QWidget(this);
+    right_widget->setMinimumWidth(440);
     auto* right_layout = new QVBoxLayout(right_widget);
-    right_layout->setContentsMargins(0, 0, 0, 0);
-    right_layout->setSpacing(0);
+    right_layout->setContentsMargins(4, 4, 4, 4);
+    right_layout->setSpacing(4);
     right_layout->addWidget(order_entry_);
     right_layout->addWidget(replay_ctrl_);
     right_layout->addWidget(metrics_panel_);
-    right_layout->addWidget(spread_chart_);
+    right_layout->addWidget(spread_chart_, 1);
 
     auto* splitter = new QSplitter(Qt::Horizontal, this);
     splitter->addWidget(left_widget);
     splitter->addWidget(right_widget);
     splitter->setStretchFactor(0, 3);
     splitter->setStretchFactor(1, 1);
-    splitter->setSizes({900, 380});
+    splitter->setSizes({820, 460});
 
     setCentralWidget(splitter);
+
+    // Overlay: created last so it sits on top; no parent layout
+    overlay_ = new WelcomeOverlay(this);
 }
 
 void MainWindow::setup_connections() {
@@ -99,7 +115,6 @@ void MainWindow::setup_connections() {
             replay_ctrl_, &ReplayControls::update_progress,
             Qt::QueuedConnection);
 
-    // Phase 4 — book snapshot also drives metrics book info and spread chart
     connect(worker_, &EngineWorker::bookUpdated,
             metrics_panel_, &MetricsPanel::update_book_info,
             Qt::QueuedConnection);
@@ -109,7 +124,6 @@ void MainWindow::setup_connections() {
                 spread_chart_->add_point(snap.spread);
             }, Qt::QueuedConnection);
 
-    // Phase 4 — metrics timer drives the metrics panel
     connect(worker_, &EngineWorker::metricsUpdated,
             metrics_panel_, &MetricsPanel::update,
             Qt::QueuedConnection);
@@ -143,10 +157,13 @@ void MainWindow::setup_connections() {
     connect(replay_ctrl_, &ReplayControls::stop_scenario,
             worker_, &EngineWorker::stopScenario);
 
-    // Auto-start medium scenario on launch
-    QMetaObject::invokeMethod(worker_, "startScenario",
-                              Qt::QueuedConnection,
-                              Q_ARG(QString, "medium"));
+    // Overlay start button → engine starts medium scenario (Step 4: no auto-start)
+    connect(overlay_, &WelcomeOverlay::start_requested,
+            worker_, [this] {
+                QMetaObject::invokeMethod(worker_, "startScenario",
+                                          Qt::QueuedConnection,
+                                          Q_ARG(QString, "medium"));
+            });
 }
 
 } // namespace lob_qt

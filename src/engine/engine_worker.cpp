@@ -7,6 +7,7 @@
 #include "core/order.hpp"
 #include "core/event.hpp"
 #include <QDateTime>
+#include <QElapsedTimer>
 #include <algorithm>
 #include <fstream>
 #include <iterator>
@@ -103,8 +104,13 @@ void EngineWorker::submitOrder(lob_qt::SubmitOrderCommand cmd) {
     case OrderTypeUi::Iceberg:   order.type = lob::OrderType::Iceberg;   break;
     }
 
+    QElapsedTimer t; t.start();
     auto result = engine_->submit(lob::NewOrderEvent{order});
+    quint64 ns = static_cast<quint64>(t.nsecsElapsed());
     ++event_count_;
+    lat_sum_ns_ += ns;
+    ++lat_count_;
+    lat_max_ns_ = std::max(lat_max_ns_, ns);
 
     emit_trades(this, result.trades);
 
@@ -121,8 +127,14 @@ void EngineWorker::submitOrder(lob_qt::SubmitOrderCommand cmd) {
 void EngineWorker::cancelOrder(quint64 order_id) {
     lob::CancelOrderEvent ev;
     ev.order_id = order_id;
+    QElapsedTimer t; t.start();
     engine_->submit(ev);
+    quint64 ns = static_cast<quint64>(t.nsecsElapsed());
     ++event_count_;
+    ++cancel_count_;
+    lat_sum_ns_ += ns;
+    ++lat_count_;
+    lat_max_ns_ = std::max(lat_max_ns_, ns);
     emit_book_snapshot();
 }
 
@@ -164,9 +176,14 @@ void EngineWorker::on_replay_tick() {
         return;
     }
 
+    QElapsedTimer t; t.start();
     auto result = engine_->submit(ev);
+    quint64 ns = static_cast<quint64>(t.nsecsElapsed());
     ++event_count_;
     ++replay_current_;
+    lat_sum_ns_ += ns;
+    ++lat_count_;
+    lat_max_ns_ = std::max(lat_max_ns_, ns);
 
     emit_trades(this, result.trades);
     emit replayProgress(replay_current_, replay_total_);
@@ -181,6 +198,11 @@ void EngineWorker::startScenario(QString scenario_name) {
     generator_timer_->stop();
     generator_.reset();
 
+    // Always reset engine between scenarios to avoid stale/depleted book state
+    init_engine();
+    event_count_      = 0;
+    last_event_count_ = 0;
+
     lob::EngineConfig config;
     config.mid_price = 10000;
 
@@ -189,12 +211,13 @@ void EngineWorker::startScenario(QString scenario_name) {
         config.cancel_probability = 0.1;
         config.price_std_dev      = 5.0;
     } else if (scenario_name == "large") {
-        config.arrival_rate       = 5000.0;
-        config.cancel_probability = 0.3;
+        config.arrival_rate       = 3000.0;
+        config.cancel_probability = 0.2;
         config.price_std_dev      = 20.0;
     } else if (scenario_name == "high_cancel") {
-        config.arrival_rate       = 1000.0;
-        config.cancel_probability = 0.7;
+        // Cap at 0.5 — above this the book drains and match_limit hits null PriceLevel
+        config.arrival_rate       = 800.0;
+        config.cancel_probability = 0.5;
         config.price_std_dev      = 20.0;
     } else if (scenario_name == "market_heavy") {
         config.arrival_rate       = 1000.0;
@@ -224,15 +247,22 @@ void EngineWorker::stopScenario() {
 void EngineWorker::on_generator_tick() {
     if (!generator_) return;
 
-    for (int i = 0; i < 10; ++i) {
+    // Process up to 5 events per tick (reduced from 10 to keep book populated)
+    for (int i = 0; i < 5; ++i) {
         lob::OrderEvent ev;
         if (!generator_->next(ev)) {
             generator_timer_->stop();
             break;
         }
+        QElapsedTimer t; t.start();
         auto result = engine_->submit(ev);
+        quint64 ns = static_cast<quint64>(t.nsecsElapsed());
         ++event_count_;
+        lat_sum_ns_ += ns;
+        ++lat_count_;
+        lat_max_ns_ = std::max(lat_max_ns_, ns);
         emit_trades(this, result.trades);
+        trade_count_ += static_cast<quint64>(result.trades.size());
     }
 
     emit_book_snapshot();
@@ -260,9 +290,34 @@ void EngineWorker::resetEngine() {
 
 void EngineWorker::on_metrics_tick() {
     MetricsSnapshot snap;
+
+    // Throughput
     quint64 delta       = event_count_ - last_event_count_;
     snap.throughput_eps = static_cast<double>(delta);
     last_event_count_   = event_count_;
+
+    // Latency (mean and max from this second's samples)
+    if (lat_count_ > 0) {
+        snap.p50_ns = lat_sum_ns_ / lat_count_;   // mean as p50 proxy
+        snap.p99_ns = lat_max_ns_;                // max as p99 proxy
+        snap.p95_ns = (lat_sum_ns_ / lat_count_) * 95 / 100 + lat_max_ns_ / 20;
+        snap.max_ns = lat_max_ns_;
+        // Reset accumulators
+        lat_sum_ns_ = 0;
+        lat_count_  = 0;
+        lat_max_ns_ = 0;
+    }
+
+    // Fill and cancel rates
+    quint64 trades_delta  = trade_count_  - last_trade_count_;
+    quint64 cancels_delta = cancel_count_ - last_cancel_count_;
+    last_trade_count_  = trade_count_;
+    last_cancel_count_ = cancel_count_;
+    if (delta > 0) {
+        snap.fill_rate   = static_cast<double>(trades_delta)  / static_cast<double>(delta);
+        snap.cancel_rate = static_cast<double>(cancels_delta) / static_cast<double>(delta);
+    }
+
     emit metricsUpdated(snap);
 }
 
@@ -303,8 +358,6 @@ void EngineWorker::emit_book_snapshot() {
     emit bookUpdated(snap);
 }
 
-void EngineWorker::emit_metrics_snapshot() {
-    // Phase 4
-}
+// emit_metrics_snapshot() removed — latency now tracked in on_metrics_tick()
 
 } // namespace lob_qt

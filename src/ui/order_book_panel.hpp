@@ -19,7 +19,7 @@ public slots:
     void update(const lob_qt::BookSnapshot& snapshot);
 
 private:
-    void setup_table(QTableView* view, bool is_bid);
+    void setup_table(QTableView* view);
 
     OrderBookModel* bid_model_    {nullptr};
     OrderBookModel* ask_model_    {nullptr};

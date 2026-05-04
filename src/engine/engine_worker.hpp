@@ -65,7 +65,16 @@ private:
     void init_engine();
     void init_timers();
     void emit_book_snapshot();
-    void emit_metrics_snapshot();
+
+    // Latency tracking for on_metrics_tick()
+    quint64 trade_count_      {0};
+    quint64 cancel_count_     {0};
+    quint64 last_trade_count_ {0};
+    quint64 last_cancel_count_{0};
+    quint64 lat_min_ns_       {UINT64_MAX};
+    quint64 lat_max_ns_       {0};
+    quint64 lat_sum_ns_       {0};
+    quint64 lat_count_        {0};
 };
 
 } // namespace lob_qt

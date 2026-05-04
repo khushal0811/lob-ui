@@ -67,7 +67,7 @@ void SpreadChart::add_point(qint64 spread_ticks) {
     auto axes_x = chart_->axes(Qt::Horizontal);
     if (!axes_x.isEmpty()) {
         axes_x.first()->setRange(
-            static_cast<double>(std::max(0LL, x_ - kMaxPoints)),
+            static_cast<double>(std::max(qint64{0}, x_ - static_cast<qint64>(kMaxPoints))),
             static_cast<double>(x_));
     }
 

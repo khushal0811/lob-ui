@@ -7,7 +7,7 @@ namespace lob_qt {
 
 static QLabel* make_value_label(QWidget* parent) {
     auto* lbl = new QLabel("—", parent);
-    lbl->setStyleSheet("color: #cdd6f4; font-family: 'SF Mono', 'Menlo', monospace;");
+    lbl->setStyleSheet("color: #cdd6f4; font-family: 'Menlo', monospace;");
     return lbl;
 }
 

@@ -12,6 +12,7 @@ class OrderEntry;
 class ReplayControls;
 class MetricsPanel;
 class SpreadChart;
+class WelcomeOverlay;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -19,6 +20,9 @@ class MainWindow : public QMainWindow {
 public:
     explicit MainWindow(QWidget* parent = nullptr);
     ~MainWindow() override;
+
+protected:
+    void showEvent(QShowEvent* event) override;
 
 private:
     void setup_worker();
@@ -36,6 +40,7 @@ private:
     ReplayControls* replay_ctrl_   {nullptr};
     MetricsPanel*   metrics_panel_ {nullptr};
     SpreadChart*    spread_chart_  {nullptr};
+    WelcomeOverlay* overlay_       {nullptr};
 };
 
 } // namespace lob_qt

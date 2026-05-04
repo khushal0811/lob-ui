@@ -47,9 +47,9 @@ The engine does NOT know Qt exists. Qt does NOT run matching logic. The bridge d
 ## Current project state
 
 - Current phase: 5
-- Current part: 5.1
-- Last completed part: 4.3 (Phase 4 complete — MetricsPanel, SpreadChart, full observability layer)
-- Last commit: none yet (commits pending)
+- Current part: 5.2
+- Last completed part: 5.1 (stylesheet) + full debug+UX pass (Steps 1-10)
+- Last commit: fix: trade tape — alternating rows, consistent header styling
 
 ---
 
