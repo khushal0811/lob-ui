@@ -2,6 +2,9 @@
 
 > **Exchanges have always felt like a black box.** This application opens that box.
 
+![lob-qt demo](https://github.com/khushal0811/lob-ui/assets/176611453/9c1d169e-9c93-4288-adce-dcab6e9f0547)
+
+---
 Most people who trade — or learn about finance — never see what actually happens when they place an order. What does "best bid" mean? What is a spread? Why does your market order sometimes get a worse price than you expected? Why does liquidity disappear when volatility spikes?
 
 **lob-qt** is a desktop application that makes all of this visible in real time. **This is not a mock UI — it is backed by an exchange-style C++ matching engine.** Every order you submit — limit, market, stop, iceberg — immediately interacts with a live order book running on a dedicated background thread. You watch the bid/ask table shift, the spread widen or tighten, and the trade tape fill up — all as a direct result of your actions.
