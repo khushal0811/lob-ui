@@ -1,5 +1,3 @@
-# lob-qt — Real-Time Order Book Visualizer
-
 > **Exchanges have always felt like a black box.** This application opens that box.
 
 Most people who trade — or learn about finance — never see what actually happens when they place an order. What does "best bid" mean? What is a spread? Why does your market order sometimes get a worse price than you expected? Why does liquidity disappear when volatility spikes?
@@ -24,7 +22,6 @@ One of the strongest parts of this architecture is the **absolute separation of 
 ---
 
 ## What You Can See
-
 ```
 ┌─────────────────────────────────┬──────────────────────────────────┐
 │        ORDER BOOK               │         ORDER ENTRY              │
@@ -48,7 +45,6 @@ One of the strongest parts of this architecture is the **absolute separation of 
 ---
 
 ## Features
-
 - **Live Order Book** — bid/ask price levels update in real time, best prices highlighted
 - **Trade Tape** — every match printed with timestamp, side, price, and quantity
 - **Order Entry** — submit Limit, Market, Stop, Stop-Limit, and Iceberg orders
@@ -61,8 +57,6 @@ One of the strongest parts of this architecture is the **absolute separation of 
 - **Welcome Guide** — explains every panel before the engine starts
 
 ---
-
-## Architecture
 
 ```
 ┌────────────────────────────────────────────────────────┐
@@ -84,10 +78,6 @@ The matching engine (`lob-engine`) is a separate C++ library compiled as a stati
 
 ---
 
-## Build
-
-### Prerequisites
-
 | Dependency | Version |
 |---|---|
 | macOS | Ventura 13+ (tested on Sonoma, Sequoia) |
@@ -98,7 +88,7 @@ The matching engine (`lob-engine`) is a separate C++ library compiled as a stati
 
 > **lob-qt links against `lob-engine` as a static library.** Both repos must sit as siblings:
 > ```
-> Project_1/
+> exchange/
 > ├── lob-engine/   ← clone and build this first
 > └── lob-ui/       ← then build this
 > ```
@@ -125,7 +115,6 @@ cmake --build build --parallel
 ---
 
 ## Scenarios
-
 Select any scenario from **Replay Controls → Run Scenario**:
 
 | Scenario | Description | Best for learning |
@@ -142,7 +131,6 @@ Each scenario launches an interactive tutorial overlay after 2 seconds with conc
 ---
 
 ## Custom CSV Replay
-
 Load your own event log via **Replay Controls → Load CSV…**
 
 Required columns:
@@ -158,7 +146,6 @@ Use **Step** to advance one event at a time, or **Play** at 0.1×–10× speed.
 ---
 
 ## Key Concepts Explained
-
 **Spread** — the gap between the best ask (lowest sell) and best bid (highest buy). Narrow spread = liquid market. Wide spread = thin book.
 
 **Market order** — executes immediately at whatever price is available. May fill across multiple levels if the size is large enough.
@@ -174,7 +161,6 @@ Use **Step** to advance one event at a time, or **Play** at 0.1×–10× speed.
 ---
 
 ## Repository Structure
-
 ```
 lob-ui/
 ├── src/
@@ -191,5 +177,4 @@ lob-ui/
 ---
 
 ## License
-
 MIT — see `LICENSE`.
